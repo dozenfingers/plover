@@ -3,7 +3,6 @@
 
 """Platform dependent configuration."""
 
-import appdirs
 import os
 from os.path import realpath, join, dirname, abspath, isfile, pardir
 import sys
@@ -27,4 +26,4 @@ else:
 if isfile(join(PROGRAM_DIR, 'plover.cfg')):
     CONFIG_DIR = PROGRAM_DIR
 else:
-    CONFIG_DIR = appdirs.user_data_dir('plover', 'plover')
+    CONFIG_DIR = os.path.expanduser('~/.config/plover')
