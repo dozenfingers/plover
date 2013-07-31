@@ -91,6 +91,9 @@ class KeyboardCapture(threading.Thread):
         self.local_display = display.Display()
         self.record_display = display.Display()
 
+        self.is_suppressed = False
+        self.grab_window = self.local_display.screen().root
+
     def run(self):
         # Check if the extension is present
         if not self.record_display.has_extension("RECORD"):
@@ -132,14 +135,29 @@ class KeyboardCapture(threading.Thread):
         if self in keyboard_capture_instances:
             keyboard_capture_instances.remove(self)
 
+    def grab_key(self, keycode):
+        self.grab_window.grab_key(keycode, 0, 0, X.GrabModeAsync, X.GrabModeAsync)
+
+    def ungrab_key(self, keycode):
+        self.grab_window.ungrab_key(keycode, 0)
+
     def can_suppress_keyboard(self):
-        return False
+        return True
 
     def suppress_keyboard(self, suppress):
-        pass
+        if self.is_suppressed == suppress:
+            return
+        if suppress:
+            fn = self.grab_key
+        else:
+            fn = self.ungrab_key
+        for keycode in KEYCODE_TO_PSEUDOKEY.keys():
+            fn(keycode)
+        self.local_display.sync()
+        self.is_suppressed = suppress
 
     def is_keyboard_suppressed(self):
-        return False
+        return self.is_suppressed
 
     def process_events(self, reply):
         """Handle keyboard events.
