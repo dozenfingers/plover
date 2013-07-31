@@ -70,7 +70,7 @@ class Stenotype(StenotypeBase):
         self._keyboard_capture.key_up = self._key_up
         self._down_keys = set()
         self._released_keys = set()
-        self.suppress_keyboard(True)
+        self.suppress_keyboard(False)
         self.arpeggiate = params['arpeggiate']
 
     def start_capture(self):
