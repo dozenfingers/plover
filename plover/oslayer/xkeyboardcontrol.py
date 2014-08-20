@@ -136,10 +136,12 @@ class KeyboardCapture(threading.Thread):
             keyboard_capture_instances.remove(self)
 
     def grab_key(self, keycode):
-        self.grab_window.grab_key(keycode, 0, 0, X.GrabModeAsync, X.GrabModeAsync)
+        for modifiers in (0, X.Mod2Mask):
+            self.grab_window.grab_key(keycode, modifiers, False, X.GrabModeAsync, X.GrabModeAsync)
 
     def ungrab_key(self, keycode):
-        self.grab_window.ungrab_key(keycode, 0)
+        for modifiers in (0, X.Mod2Mask):
+            self.grab_window.ungrab_key(keycode, modifiers)
 
     def can_suppress_keyboard(self):
         return True
