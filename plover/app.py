@@ -183,6 +183,8 @@ class StenoEngine(object):
             self.machine.add_state_callback(self._machine_state_callback)
             self.machine.add_stroke_callback(self.logger.log_stroke)
             self.machine.add_stroke_callback(self._translator_machine_callback)
+            self.machine.add_notify_callback(
+                    lambda: self.set_is_running(not self.is_running))
             self.machine.start_capture()
             self.set_is_running(self.is_running)
         else:

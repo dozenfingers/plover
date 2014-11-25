@@ -22,6 +22,7 @@ class StenotypeBase(object):
     def __init__(self):
         self.stroke_subscribers = []
         self.state_subscribers = []
+        self.toggle_subscribers = []
         self.state = STATE_STOPPED
         self.suppress = None
 
@@ -60,6 +61,17 @@ class StenotypeBase(object):
     def remove_state_callback(self, callback):
         self.state_subscribers.remove(callback)
 
+    def add_notify_callback(self, callback):
+        """Subscribe to output from the stenotype machine.
+
+        Argument:
+
+        callback -- The function to call whenever the machine's
+        toggle switch is hit. Usually used to uh, toggle it.
+
+        """
+        self.toggle_subscribers.append(callback)
+
     def _notify(self, steno_keys):
         """Invoke the callback of each subscriber with the given argument."""
         # If the stroke matches a command while the keyboard is not suppressed 
@@ -71,6 +83,10 @@ class StenotypeBase(object):
             callback(steno_keys)
         if self.suppress:
             self._post_suppress(self.suppress, steno_keys)
+
+    def _notify_toggle(self):
+        for callback in self.toggle_subscribers:
+            callback()
             
     def _post_suppress(self, suppress, steno_keys):
         """This is a complicated way for the application to tell the machine to 
