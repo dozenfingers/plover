@@ -42,12 +42,71 @@ class PloverGUI(wx.App):
     def OnInit(self):
         """Called just before the application starts."""
         frame = MainFrame(self.config)
-        self.SetTopWindow(frame)
-        frame.Show()
+        #self.SetTopWindow(frame)
+        frame.Show(False)
+        tray = Tray(frame)
+        frame.tray = tray
         return True
 
 def gui_thread_hook(fn, *args):
     wx.CallAfter(fn, *args)
+
+def create_menu_item(menu, label, func):
+    item = wx.MenuItem(menu, -1, label)
+    menu.Bind(wx.EVT_MENU, func, id=item.GetId())
+    menu.AppendItem(item)
+    return item
+
+class Tray(wx.TaskBarIcon):
+    ON_ICON_FILE = os.path.join(ASSETS_DIR, 'plover_on_small.png')
+    OFF_ICON_FILE = os.path.join(ASSETS_DIR, 'plover_off_small.png')
+    def __init__(self, frame):
+        super(Tray, self).__init__()
+        self.on_icon = self.mk_icon(self.ON_ICON_FILE)
+        self.off_icon = self.mk_icon(self.OFF_ICON_FILE)
+        self.frame = frame
+        self.frame_visible = False
+        self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
+        self.frame.steno_engine.add_callback(
+            lambda s: wx.CallAfter(self._update_status, s))
+    def _update_status(self, state):
+        if self.frame.steno_engine.is_running:
+            self.SetIcon(self.on_icon, "Plover")
+        else:
+            self.SetIcon(self.off_icon, "Plover")
+    def CreatePopupMenu(self):
+        menu = wx.Menu()
+        create_menu_item(menu, 'Toggle Plover', self.on_toggle)
+        create_menu_item(menu, 'Configure', self.on_configure)
+        create_menu_item(menu, 'About', self.on_about)
+        menu.AppendSeparator()
+        create_menu_item(menu, 'Exit', self.on_exit)
+        return menu
+    def on_left_down(self, event):
+        """
+        # doesn't frickin work
+        if self.frame_visible:
+            self.frame.Hide
+            self.frame_visible = False
+        else:
+            self.frame.Show()
+            self_frame_visible = True
+        """
+        self.frame.consume_command('TOGGLE')
+        pass
+    def mk_icon(self, path):
+        mx = wx.Image(path)
+        mx.ConvertAlphaToMask()
+        return wx.IconFromBitmap(mx.ConvertToBitmap())
+    def on_toggle(self, event):
+        self.frame.consume_command('TOGGLE')
+    def on_configure(self, event):
+        self.frame.consume_command('CONFIGURE')
+    def on_about(self, event):
+        self.frame._show_about_dialog()
+    def on_exit(self, event):
+        wx.CallAfter(self.frame.Destroy)
+        wx.CallAfter(self.Destroy)
 
 class MainFrame(wx.Frame):
     """The top-level GUI element of the Plover application."""
@@ -272,6 +331,7 @@ class MainFrame(wx.Frame):
         if self.steno_engine:
             self.steno_engine.destroy()
         self.Destroy()
+        wx.CallAfter(self.tray.Destroy)
 
     def _toggle_steno_engine(self, event=None):
         """Called when the status button is clicked."""
